@@ -18,11 +18,11 @@ function CreateRoomForm({ uuid, socket, setUser }) {
     };
 
     setUser(roomData);
-    navigate(`/${roomId}`)
-    console.log(roomData);
+    navigate(`/${roomId}`);
     socket.emit("userJoined", roomData);
   };
   return (
+    <div>
     <form action="" className=" py-5">
       <div className="py-5 flex">
         <input
@@ -68,6 +68,7 @@ function CreateRoomForm({ uuid, socket, setUser }) {
         </button>
       </div>
     </form>
+    </div>
   );
 }
 

@@ -2,90 +2,91 @@ import React, { useEffect, useState, useLayoutEffect } from "react";
 import { useRef } from "react";
 import rough from "roughjs";
 
-const WhiteBoard = ({user, canvasRef, ctxRef, elements, setElements, tool,color,socket }) => {
-  const[img,setImg]=useState(null);
-  useEffect(()=>{
-    socket.on("whiteBoardDataResponse",(data)=>{
-           setImg(data.imgURL);
-    })
-  },[])
-  
-  if(!user?.presenter){
-    return(
-      <div
-      className="h-96 w-full overflow-hidden border-black border-2"
-      >
-     
-    <img src={img} alt="Real time white board image shared by presenter" 
-    className="h-full w-full"
-   />
-   </div>
-   )
+const WhiteBoard = ({ user, canvasRef, ctxRef, elements, setElements, tool, color, socket }) => {
+  const [img, setImg] = useState(null);
+  useEffect(() => {
+    socket.on("whiteBoardDataResponse", (data) => {
+      setImg(data.imgURL);
+    });
+  }, [socket]);
+
+  if (!user?.presenter) {
+    return (
+      <div className="h-96 w-full overflow-hidden border-black border-2">
+        <img
+          src={img}
+          alt="Real time white board image shared by presenter"
+          className="object-contain"
+        />
+      </div>
+    );
   }
+
   const [isDrawing, setIsDrawing] = useState(false);
   const roughGenerator = rough.generator();
-  
+
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
-    canvas.height = window.innerHeight * 2;
-    canvas.width = window.innerWidth * 2;
-    ctx.strokeStyle=color;
-    ctx.lineWidth=2;
-    ctx.linecap="round"
+    const scale = window.devicePixelRatio || 1;
+    canvas.height = (window.innerHeight *.65);
+    canvas.width = (window.innerWidth*.63);
+    canvas.style.width = `${window.innerWidth/2 }px`;
+    canvas.style.height = `${window.innerHeight / 2}px`;
+    ctx.scale(scale, scale);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.linecap = "round";
     ctxRef.current = ctx;
   }, []);
 
-  useEffect(()=>{
-    ctxRef.current.strokeStyle=color;
-  },[color])
+  useEffect(() => {
+    ctxRef.current.strokeStyle = color;
+  }, [color]);
 
   useLayoutEffect(() => {
-    if(canvasRef){
-
+    if (canvasRef) {
       const roughCanvas = rough.canvas(canvasRef.current);
-      if(elements.length>0){
-        ctxRef.current.clearRect(0,0,canvasRef.current.width,canvasRef.current.height)
+      if (elements.length > 0) {
+        ctxRef.current.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
       }
       elements.forEach((element) => {
         if (element.type === "pencil") {
           roughCanvas.linearPath(element.path, {
-            stroke:element.stroke,
-            strokeWidth:3,
-            roughness:0,
+            stroke: element.stroke,
+            strokeWidth: 3,
+            roughness: 0,
           });
         } else if (element.type === "line") {
           roughCanvas.draw(
-          roughGenerator.line(
-            element.offsetX,
-            element.offsetY,
-            element.width,
-            element.height, {
-              stroke:element.stroke,
-              strokeWidth:3,
-              roughness:0,
-            }
-          )
-        )
-        }
-        else if(element.type==="rect"){
+            roughGenerator.line(
+              element.offsetX,
+              element.offsetY,
+              element.width,
+              element.height, {
+                stroke: element.stroke,
+                strokeWidth: 3,
+                roughness: 0,
+              }
+            )
+          );
+        } else if (element.type === "rect") {
           roughCanvas.draw(
             roughGenerator.rectangle(
               element.offsetX,
               element.offsetY,
               element.width,
-              element.height,
-              {
-                stroke:element.stroke,
-                strokeWidth:3,
-                roughness:0,
+              element.height, {
+                stroke: element.stroke,
+                strokeWidth: 3,
+                roughness: 0,
               }
             )
-          )
+          );
         }
       });
-      const canvasImage=canvasRef.current.toDataURL();
-      socket.emit("whiteboard",canvasImage)
+      const canvasImage = canvasRef.current.toDataURL();
+      socket.emit("whiteboard", canvasImage);
     }
   }, [elements]);
 
@@ -115,23 +116,22 @@ const WhiteBoard = ({user, canvasRef, ctxRef, elements, setElements, tool,color,
           stroke: color,
         },
       ]);
-    }
-    else if(tool==="rect"){
-      setElements((prevElements)=>[
+    } else if (tool === "rect") {
+      setElements((prevElements) => [
         ...prevElements,
         {
-          type:"rect",
+          type: "rect",
           offsetX,
           offsetY,
-          width:0,
-          height:0,
-          stroke:color
-
-        }
-      ])
+          width: 0,
+          height: 0,
+          stroke: color,
+        },
+      ]);
     }
     setIsDrawing(true);
   };
+
   const handleMouseMove = (e) => {
     const { offsetX, offsetY } = e.nativeEvent;
     if (isDrawing) {
@@ -164,15 +164,14 @@ const WhiteBoard = ({user, canvasRef, ctxRef, elements, setElements, tool,color,
             }
           })
         );
-      }
-      else if (tool === "rect") {
+      } else if (tool === "rect") {
         setElements((prevElements) =>
           prevElements.map((ele, index) => {
             if (index === elements.length - 1) {
               return {
                 ...ele,
-                width: offsetX-ele.offsetX,
-                height: offsetY-ele.offsetY,
+                width: offsetX - ele.offsetX,
+                height: offsetY - ele.offsetY,
               };
             } else {
               return ele;
@@ -180,17 +179,17 @@ const WhiteBoard = ({user, canvasRef, ctxRef, elements, setElements, tool,color,
           })
         );
       }
-      
     }
   };
 
   const handleMouseUp = (e) => {
     setIsDrawing(false);
   };
+
   return (
     <>
       <div
-        className="h-96 overflow-hidden"
+        className="h-96 w-full "
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

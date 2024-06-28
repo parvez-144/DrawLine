@@ -20,6 +20,9 @@ function JoinRoomForm({uuid,socket,setUser}) {
       socket.emit("userJoined",roomData);
   }
   return (
+    <div>
+
+   
     <form action="" className=" py-5">
     <div className="py-5 flex">
       <input
@@ -48,6 +51,7 @@ function JoinRoomForm({uuid,socket,setUser}) {
     </div>
   
 </form>
+</div>
   )
 }
 
