@@ -1,44 +1,42 @@
 import { useEffect, useState } from "react";
 import "./App.css";
-import CreateRoomForm from "./components/forms/CreateRoomform/CreateRoomForm";
 import Forms from "./components/forms/Forms";
 import { Route, Routes } from "react-router-dom";
 import Room from "./pages/RoomPage/Room";
 import io from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
-import Navbar from "./components/Navbar/Navbar";
-import { createBrowserRouter } from "react-router-dom";
+import Home from "./components/Home/Home";
 
-const server = "http://localhost:3000";
-const connectionOptions = {
-  "force new connection": true,
-  reconnectionAttempts: "intfinity",
-  timeout: 10000,
-  transports: ["websocket"],
-};
+// const server = "http://localhost:3000";
+// const connectionOptions = {
+//   "force new connection": true,
+//   reconnectionAttempts: "intfinity",
+//   timeout: 10000,
+//   transports: ["websocket"],
+// };
 
-const socket = io(server, connectionOptions);
+// const socket = io(server, connectionOptions);
 
-const uuid = () => {
-  let S4 = () => {
-    return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
-  };
-  return (
-    S4() +
-    S4() +
-    "-" +
-    S4() +
-    "-" +
-    S4() +
-    "-" +
-    S4() +
-    "-" +
-    S4() +
-    S4() +
-    S4()
-  );
-};
+// const uuid = () => {
+//   let S4 = () => {
+//     return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+//   };
+//   return (
+//     S4() +
+//     S4() +
+//     "-" +
+//     S4() +
+//     "-" +
+//     S4() +
+//     "-" +
+//     S4() +
+//     "-" +
+//     S4() +
+//     S4() +
+//     S4()
+//   );
+// };
 
 function App() {
   const [user, setUser] = useState(null);
@@ -60,21 +58,19 @@ function App() {
       console.log("user joined message", data);
       toast.info(`${data} joined the room `);
     });
-    socket.on("userLeftMessageBroadcasted",(data)=>{
+    socket.on("userLeftMessageBroadcasted", (data) => {
       console.log(`${data} left the room`);
-      toast.info(`${data} left the room`)
-    })
+      toast.info(`${data} left the room`);
+    });
   }, []);
 
+  // {<Forms uuid={uuid} socket={socket} setUser={setUser} />}
   return (
     <>
       <ToastContainer />
-      {/* <Navbar/> */}
-      <Routes>  
-        <Route
-          path="/"
-          element={<Forms uuid={uuid} socket={socket} setUser={setUser} />}
-        />
+
+      <Routes>
+        <Route path="" element={<Home />} />
         <Route
           path="/:roomId"
           element={<Room user={user} socket={socket} users={users} />}

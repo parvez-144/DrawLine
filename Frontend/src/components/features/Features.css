@@ -1,0 +1,26 @@
+.Feature__wrapper{
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 30%;
+}
+.Feature__wrapper img{
+    height: 9rem;
+    width: 9rem;
+}
+.Feature__wrapper h1{
+    font-size: 2rem;
+    padding: 2px;
+    font-family: 'Times New Roman', Times, serif;
+    color: rgb(36, 80, 142);
+}
+
+.Feature__wrapper p{
+    color: black;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: large;
+    text-align: center;
+
+}

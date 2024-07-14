@@ -2,7 +2,7 @@ import React, { useEffect, useState, useLayoutEffect } from "react";
 import { useRef } from "react";
 import rough from "roughjs";
 
-const WhiteBoard = ({ user, canvasRef, ctxRef, elements, setElements, tool, color, socket }) => {
+const WhiteBoard = ({ user, canvasRef, ctxRef, elements, setElements, tool, color, socket,roomId }) => {
   const [img, setImg] = useState(null);
   useEffect(() => {
     socket.on("whiteBoardDataResponse", (data) => {
@@ -12,11 +12,11 @@ const WhiteBoard = ({ user, canvasRef, ctxRef, elements, setElements, tool, colo
 
   if (!user?.presenter) {
     return (
-      <div className="h-96 w-full overflow-hidden border-black border-2">
+      <div className="h-full w-full overflow-hidden ">
         <img
           src={img}
-          alt="Real time white board image shared by presenter"
-          className="object-contain"
+          // alt="Real time white board image shared by presenter"
+          className=""
         />
       </div>
     );
@@ -31,7 +31,7 @@ const WhiteBoard = ({ user, canvasRef, ctxRef, elements, setElements, tool, colo
     const scale = window.devicePixelRatio || 1;
     canvas.height = (window.innerHeight *.65);
     canvas.width = (window.innerWidth*.63);
-    canvas.style.width = `${window.innerWidth/2 }px`;
+    canvas.style.width = `${window.innerWidth/2}px`;
     canvas.style.height = `${window.innerHeight / 2}px`;
     ctx.scale(scale, scale);
     ctx.strokeStyle = color;
@@ -86,7 +86,7 @@ const WhiteBoard = ({ user, canvasRef, ctxRef, elements, setElements, tool, colo
         }
       });
       const canvasImage = canvasRef.current.toDataURL();
-      socket.emit("whiteboard", canvasImage);
+      socket.emit("whiteboard", {canvasImage,roomId});
     }
   }, [elements]);
 
@@ -189,12 +189,12 @@ const WhiteBoard = ({ user, canvasRef, ctxRef, elements, setElements, tool, colo
   return (
     <>
       <div
-        className="h-96 w-full "
+        className="h-full w-full"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
       >
-        <canvas ref={canvasRef} />
+        <canvas ref={canvasRef} className="w-full h-full" />
       </div>
     </>
   );

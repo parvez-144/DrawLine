@@ -1,18 +1,55 @@
 import React, { useState, useRef, useEffect } from "react";
 import WhiteBoard from "../../components/whiteboard/WhiteBoard";
 import ChatBar from "../../components/ChatBar/ChatBar";
+import { useContext } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import authContext from "../../components/Contexts/authContext";
+import EllipsisText from 'react-ellipsis-text';
+import { Navigate, useNavigate } from "react-router-dom";
+import {
+  faRightFromBracket,
+  faUsers,
+  faPalette,
+  faSquare,
+  faSlash,
+  faPencilAlt,
+  faRedo,
+  faRotateLeft,
+  faTimes,
+  faBars,
+  faMessage,
+  faCircleInfo,
+  faCross,
+  faCut,
+  faXmark,
+} from "@fortawesome/free-solid-svg-icons";
+import roomContext from "../../components/Contexts/roomContext";
 
-function Room({ user, socket, users }) {
+function Room() {
+  const authData=useContext(authContext);
+  const navigate=useNavigate();
+  const {verified}=authData;
+  const data = useContext(roomContext);
+  const {  socket, users,userName } = data;
   const [tool, setTool] = useState("pencil");
   const [color, setcolor] = useState("black");
   const [elements, setElements] = useState([]);
   const [history, setHistory] = useState([]);
-  const [openedUserTab, setOpenedUserTab] = useState(true);
+  const [openedUserTab, setOpenedUserTab] = useState(false);
   const [openedChatTab, setOpenedChatTab] = useState(true);
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('user');
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
+  console.log(users)
+  if(!verified){
+         navigate("/Login")
+  }
   const canvasRef = useRef(null);
   const ctxRef = useRef(null);
   useEffect(() => {
+    socket.emit("userJoined", user);
     return () => {
       socket.emit("userLeft", user);
     };
@@ -41,161 +78,229 @@ function Room({ user, socket, users }) {
     setHistory((prevHistory) => prevHistory.slice(0, prevHistory.length - 1));
   };
   return (
-    <div className="p-2 h-lvh bg-teal-300 flex flex-row justify-between  min-w-fit">
-      <div className="mt-10  ">
-        <div>
-          <button
-            type="button"
-            className="m-5 border-2 border-blue-700 rounded-2xl px-2  bg-blue-400 hover:shadow "
-            onClick={() => setOpenedUserTab(true)}
-          >
-            Users
-          </button>
+    <>
+     
+      <div className="h-screen w-full ">
+        <div className="whiteBoard__head  bg-slate-50 flex flex-row justify-between p-4 px-16 border-b-2 border-b-slate-300 shadow-lg">
+          <span className="text-2xl font-bold text-sky-950">DrawLine</span>
+          {user && user.presenter && (
+            <div className="flex flex-row justify-between  gap-6 px-16 pt-2">
+              <FontAwesomeIcon
+                onClick={undo}
+                disabled={elements.length === 0}
+                className="text-blue-900 text-2xl transition-transform duration-300 transform hover:scale-125 cursor-pointer"
+                icon={faRotateLeft}
+              />
+              <FontAwesomeIcon
+                onClick={redo}
+                disabled={history.length < 1}
+                className="text-blue-900 text-2xl tetransition-transform duration-300 transform hover:scale-125 cursor-pointer"
+                icon={faRedo}
+              />
+              <FontAwesomeIcon
+                onClick={handleClearCanvas}
+                className="text-red-600 text-2xl transition-transform duration-300 transform hover:scale-125 cursor-pointer"
+                icon={faTimes}
+              />
+              <FontAwesomeIcon
+                className="text-blue-900 text-2xl transition-transform duration-300 transform hover:scale-125 cursor-pointer"
+                icon={faBars}
+              />
+            </div>
+          )}
         </div>
-        {openedUserTab && (
-          <div
-            className="h-fit  flex flex-col text-white bg-slate-900"
-            style={{ width: "250px" }}
-          >
-            <button
-              type="button"
-              className="border-2 border-blue-700 w-full mt-5 rounded-2xl px-2 bg-white text-black hover:shadow"
-              onClick={() => setOpenedUserTab(false)}
-            >
-              CLOSE
-            </button>
-            <div className="mt-10 h-[65vh] ">
-              {users.map((usr, index) => (
+        <div className="flex flex-row w-full h-4/5" >
+          <div className="whiteBoard flex flex-row w-full h-full">
+            <div className="canvas w-full absolute">
+              {user && user.presenter && (
+                <>
+                  <div className="shapes absolute top-24  left-10 flex flex-col justify-between gap-7 bg-slate-100 p-3 border  shadow-md rounded-full z-10">
+                    <div className="flex flex-col items-center">
+                      <input
+                        type="radio"
+                        name="tool"
+                        value="pencil"
+                        id="pencil"
+                        checked={tool === "pencil"}
+                        onChange={(e) => setTool(e.target.value)}
+                        className="hidden"
+                      />
+                      <label htmlFor="pencil" className="cursor-pointer">
+                        <div
+                          className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                            tool === "pencil"
+                              ? "bg-teal-300 text-white"
+                              : "bg-gray-200 text-teal-400"
+                          } hover:bg-teal-300 hover:text-white transition`}
+                        >
+                          <FontAwesomeIcon
+                            icon={faPencilAlt}
+                            className="text-xl"
+                          />
+                        </div>
+                      </label>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <input
+                        type="radio"
+                        name="tool"
+                        value="line"
+                        id="line"
+                        checked={tool === "line"}
+                        onChange={(e) => setTool(e.target.value)}
+                        className="hidden"
+                      />
+                      <label htmlFor="line" className="cursor-pointer">
+                        <div
+                          className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                            tool === "line"
+                              ? "bg-teal-300 text-white"
+                              : "bg-gray-200 text-teal-400"
+                          } hover:bg-teal-300 hover:text-white transition`}
+                        >
+                          <FontAwesomeIcon
+                            icon={faSlash}
+                            className={`text-xl
+                      `}
+                          />
+                        </div>
+                      </label>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <input
+                        type="radio"
+                        name="tool"
+                        value="rect"
+                        id="rect"
+                        checked={tool === "rect"}
+                        onChange={(e) => setTool(e.target.value)}
+                        className="hidden"
+                      />
+                      <label htmlFor="rect" className="cursor-pointer">
+                        <div
+                          className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                            tool === "rect"
+                              ? "bg-teal-300 text-white"
+                              : "bg-gray-200 text-teal-400"
+                          } hover:bg-teal-300 hover:text-white transition`}
+                        >
+                          <FontAwesomeIcon
+                            icon={faSquare}
+                            className={`text-xl`}
+                          />
+                        </div>
+                      </label>
+                    </div>
+                    <div className="flex flex-col items-center mb-4">
+                      <label htmlFor="color" className="cursor-pointer">
+                        <div
+                          className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                            tool === "color"
+                              ? "bg-teal-300 text-white"
+                              : "bg-gray-200 text-teal-400"
+                          } hover:bg-teal-300 hover:text-white transition`}
+                        >
+                          <FontAwesomeIcon
+                            icon={faPalette}
+                            className="text-xl "
+                          />
+                        </div>
+
+                        <input
+                          type="color"
+                          id="color"
+                          name="tool"
+                          value="color"
+                          onChange={(e) => {
+                            setcolor(e.target.value);
+                            setTool("color");
+                          }}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <WhiteBoard
+                canvasRef={canvasRef}
+                ctxRef={ctxRef}
+                roomId={user.roomId}
+                elements={elements}
+                tool={tool}
+                user={user}
+                color={color}
+                socket={socket}
+                setElements={setElements}
+              />
+            </div>
+          </div >
+          {openedUserTab && (
+            <div className=" Chat_Users w-1/4 h-full">
+              <div className="h-full flex flex-col text-black bg-white p-2 ">
+                <div className="h-full p-2 rounded-lg border-slate-400 border-2 ">
+                  <div className="flex flex-row justify-between">
+                    <h1 className=" text-xl">People</h1>
+                    <FontAwesomeIcon
+                      className="pt-2 hover:scale-125 cursor-pointer"
+                      icon={faXmark}
+                      onClick={() => setOpenedUserTab(false)}
+                    />
+                  </div>
+                  <div className=" h-full pt-5   " >
+                    <h2 className=" text-xs">IN MEETING</h2>
+                    <div className="mt-3  overflow-auto h-full max-h-[65vh]">
+                    {users.map((usr, index) => (
                 <p key={index * 999} className="my-2 text-white">
                   {usr.name}
                   {user && user.userId === usr.userId && " (You)"}
                 </p>
               ))}
+                      
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+          {openedChatTab && (
+            <div className="Chat_Users w-1/4 h-full  ">
+              <ChatBar setOpenedChatTab={setOpenedChatTab} socket={socket} userName={user.userName} roomId={user.roomId} />
+            </div>
+          )}
+        </div>
 
-      <div className="mt-10 m-5 ">
-        <h1 className="text-center py-5 text-3xl font-mono">
-          White Board Sharing App
-          <span>[users Online: {users ? users.length : "Loading..."}]</span>
-        </h1>
-        {user && user.presenter && (
-          <div className=" flex mt-2 mb-2 w-full justify-between">
-            <div className="flex justify-center">
-              <div className="flex gap-1 justify-between">
-                <label htmlFor="pencil" className="mt-1">
-                  Pencil
-                </label>
-                <input
-                  selected
-                  type="radio"
-                  name="tool"
-                  value="pencil"
-                  checked={tool === "pencil"}
-                  id="pencil"
-                  className="mt-1"
-                  onChange={(e) => setTool(e.target.value)}
-                />
-              </div>
-              <div className="flex gap-1">
-                <label htmlFor="line" className="mt-1">
-                  Line
-                </label>
-                <input
-                  selected
-                  type="radio"
-                  name="tool"
-                  id="line"
-                  checked={tool === "line"}
-                  className="mt-1"
-                  value="line"
-                  onChange={(e) => setTool(e.target.value)}
-                />
-              </div>
-              <div className="flex gap-1">
-                <label htmlFor="rect" className="mt-1">
-                  Rectangle
-                </label>
-                <input
-                  selected
-                  type="radio"
-                  name="tool"
-                  id="rect"
-                  checked={tool === "rect"}
-                  className="mt-1"
-                  value="rect"
-                  onChange={(e) => setTool(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="">
-              <div className="flex gap-2 align-baseline justify-items-center">
-                <label htmlFor="color" className="mt-1">
-                  Select color
-                </label>
-                <input
-                  type="color"
-                  id="color"
-                  className="mt-1"
-                  onChange={(e) => setcolor(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex gap-2 justify-items-center">
-              <button
-                onClick={undo}
-                disabled={elements.length === 0}
-                className="mt-1 border-2 border-blue-700 rounded-2xl px-2 bg-blue-400 hover:shadow "
-              >
-                Undo
-              </button>
-              <button
-                onClick={redo}
-                disabled={history.length < 1}
-                className="mt-1 border-2 border-blue-700 rounded-2xl px-2  hover:shadow "
-              >
-                Redo
-              </button>
-            </div>
-            <div>
-              <button
-                onClick={handleClearCanvas}
-                className="mt-1 border-2 border-red-700 rounded-2xl px-2 bg-red-500 hover:shadow-lg"
-              >
-                Clear canvas
-              </button>
-            </div>
-          </div>
-        )}
-        <div className=" border-2  border-black">
-          <WhiteBoard
-            canvasRef={canvasRef}
-            ctxRef={ctxRef}
-            elements={elements}
-            tool={tool}
-            user={user}
-            color={color}
-            socket={socket}
-            setElements={setElements}
-          />
+        <div className="bg-slate-50 ">
+          <section className=" p-7 gap-6 flex flex-row justify-center w-full h-full">
+            <FontAwesomeIcon
+              className=" text-2xl hover:scale-125 cursor-pointer"
+              icon={faRightFromBracket}
+            />
+            <FontAwesomeIcon
+              className=" text-2xl hover:scale-125 cursor-pointer"
+              onClick={() => {
+                setOpenedChatTab(false);
+                setOpenedUserTab(true);
+              }}
+              icon={faUsers}
+            />
+            <FontAwesomeIcon
+              className=" text-2xl hover:scale-125  cursor-pointer"
+              onClick={() => {
+                setOpenedUserTab(false);
+                setOpenedChatTab(true);
+              }}
+              icon={faMessage}
+            />
+            <FontAwesomeIcon
+              className=" text-2xl hover:scale-125 cursor-pointer"
+              icon={faCircleInfo}
+            />
+          </section>
         </div>
       </div>
-      <div className="pt-10">
-        <button
-          type="button"
-        
-          className="m-5 border-2 border-blue-700 rounded-2xl px-2  bg-blue-400 hover:shadow "
-          onClick={() => setOpenedChatTab(true)}
-        >
-          chats
-        </button>
-        {openedChatTab && (
-          <ChatBar setOpenedChatTab={setOpenedChatTab} socket={socket} />
-        )}
-      </div>
-    </div>
+    </>
   );
 }
 

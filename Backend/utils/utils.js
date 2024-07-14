@@ -17,6 +17,9 @@ const removeUser = (id) => {
 };
 
 //Get a user from the list
+const getAllUsers=()=>{
+  return users;
+}
 
 const getUser = (id) => {
   return users.find((user) => user.socketId === id);
@@ -32,5 +35,6 @@ module.exports = {
   addUser,
   removeUser,
   getUser,
+  getAllUsers,
   getUserInRoom,
 };
