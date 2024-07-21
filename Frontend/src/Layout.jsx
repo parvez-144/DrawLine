@@ -22,6 +22,7 @@ function Layout() {
   const [cookies, removeCookie] = useCookies([]);
   const [verified, setVerified] = useState(false);
   const [users, setUsers] = useState([]);
+  const [isAuthReady, setIsAuthReady] = useState(false); // New state to track when authContext is ready
 
   useEffect(() => {
     setupSocketListeners(socket, setUsers, toast);
@@ -30,23 +31,28 @@ function Layout() {
   useEffect(() => {
     console.log("working");
     verifyCookie(setUserName, setVerified);
+    setIsAuthReady(true); // Set the state to true after the effect completes
   }, [cookies, removeCookie, location]);
 
   return (
     <>
-      <roomContext.Provider value={{ user, socket, users,userName }}>
+      <roomContext.Provider value={{ user, socket, users, userName }}>
         <socketContext.Provider value={{ uuid, socket, setUser, userName }}>
-          <authContext.Provider
-            value={{
-              verified,
-              userName,
-              removeCookie,
-              setUserName,
-              setVerified,
-            }}
-          >
-            <Outlet />
-          </authContext.Provider>
+          {isAuthReady ? (
+            <authContext.Provider
+              value={{
+                verified,
+                userName,
+                removeCookie,
+                setUserName,
+                setVerified,
+              }}
+            >
+              <Outlet />
+            </authContext.Provider>
+          ) : (
+            <div>Loading...</div> // Optionally, show a loading indicator while authContext is not ready
+          )}
         </socketContext.Provider>
       </roomContext.Provider>
     </>

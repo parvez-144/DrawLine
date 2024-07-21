@@ -1,0 +1,18 @@
+/* src/Video.css */
+.video__container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .video {
+    width: 320px;
+    height: 240px;
+    background-color: black;
+  }
+  
+  .remote-video {
+    margin-top: 10px;
+  }
+  

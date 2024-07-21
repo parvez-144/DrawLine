@@ -3,10 +3,14 @@ import WhiteBoard from "../../components/whiteboard/WhiteBoard";
 import ChatBar from "../../components/ChatBar/ChatBar";
 import { useContext } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ToastContainer } from "react-toastify";
 import authContext from "../../components/Contexts/authContext";
-import EllipsisText from 'react-ellipsis-text';
+import Lobby from "../../components/Lobby/Lobby";
+import { AgoraRTCProvider,useRTCClient } from "agora-rtc-react";
+import AgoraRTC from "agora-rtc-sdk-ng";
 import { Navigate, useNavigate } from "react-router-dom";
 import {
+  faCamera, faMicrophone, faDesktop ,
   faRightFromBracket,
   faUsers,
   faPalette,
@@ -23,9 +27,14 @@ import {
   faCut,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
+
 import roomContext from "../../components/Contexts/roomContext";
+import { Cookies } from "react-cookie";
+
+
 
 function Room() {
+  const AppId="73924983afa744debf741e506b0e4c76"
   const authData=useContext(authContext);
   const navigate=useNavigate();
   const {verified}=authData;
@@ -42,10 +51,16 @@ function Room() {
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
-  console.log(users)
+  const cookie=new Cookies();
+  const token=null;
+
+   const client=useRTCClient( AgoraRTC.createClient({codec:"vp8",mode:"rtc"}))
+
+  
   if(!verified){
          navigate("/Login")
   }
+
   const canvasRef = useRef(null);
   const ctxRef = useRef(null);
   useEffect(() => {
@@ -54,6 +69,7 @@ function Room() {
       socket.emit("userLeft", user);
     };
   }, []);
+
   const handleClearCanvas = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -61,6 +77,7 @@ function Room() {
     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     setElements([]);
   };
+
   const undo = () => {
     setHistory((prevHistory) => [
       ...prevHistory,
@@ -70,6 +87,7 @@ function Room() {
       prevElements.slice(0, prevElements.length - 1)
     );
   };
+
   const redo = () => {
     setElements((prevElements) => [
       ...prevElements,
@@ -77,10 +95,11 @@ function Room() {
     ]);
     setHistory((prevHistory) => prevHistory.slice(0, prevHistory.length - 1));
   };
+
   return (
     <>
      
-      <div className="h-screen w-full ">
+      <div className="h-screen w-full flex flex-col ">
         <div className="whiteBoard__head  bg-slate-50 flex flex-row justify-between p-4 px-16 border-b-2 border-b-slate-300 shadow-lg">
           <span className="text-2xl font-bold text-sky-950">DrawLine</span>
           {user && user.presenter && (
@@ -109,9 +128,9 @@ function Room() {
             </div>
           )}
         </div>
-        <div className="flex flex-row w-full h-4/5" >
+        <div className="flex flex-row w-full h-full" >
           <div className="whiteBoard flex flex-row w-full h-full">
-            <div className="canvas w-full absolute">
+            <div className="canvas w-full h-full border-2 border-gray-300 rounded-lg shadow-md  ">
               {user && user.presenter && (
                 <>
                   <div className="shapes absolute top-24  left-10 flex flex-col justify-between gap-7 bg-slate-100 p-3 border  shadow-md rounded-full z-10">
@@ -235,6 +254,10 @@ function Room() {
                 setElements={setElements}
               />
             </div>
+           {/* <AgoraRTCProvider client={client}>
+            <Lobby channelName={user?.roomId} AppId={AppId} token={token}/>
+           </AgoraRTCProvider> */}
+
           </div >
           {openedUserTab && (
             <div className=" Chat_Users w-1/4 h-full">
@@ -275,10 +298,6 @@ function Room() {
           <section className=" p-7 gap-6 flex flex-row justify-center w-full h-full">
             <FontAwesomeIcon
               className=" text-2xl hover:scale-125 cursor-pointer"
-              icon={faRightFromBracket}
-            />
-            <FontAwesomeIcon
-              className=" text-2xl hover:scale-125 cursor-pointer"
               onClick={() => {
                 setOpenedChatTab(false);
                 setOpenedUserTab(true);
@@ -297,9 +316,26 @@ function Room() {
               className=" text-2xl hover:scale-125 cursor-pointer"
               icon={faCircleInfo}
             />
+            <FontAwesomeIcon
+              className=" text-2xl hover:scale-125 cursor-pointer"
+              icon={faCamera}
+            />
+            <FontAwesomeIcon
+              className=" text-2xl hover:scale-125 cursor-pointer"
+              icon={faMicrophone}
+            />
+            <FontAwesomeIcon
+              className=" text-2xl hover:scale-125 cursor-pointer"
+              icon={faDesktop}
+            />
+            <FontAwesomeIcon
+              className=" text-2xl hover:scale-125 cursor-pointer"
+              icon={faRightFromBracket}
+            />
           </section>
         </div>
       </div>
+      <ToastContainer/>
     </>
   );
 }

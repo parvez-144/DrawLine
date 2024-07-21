@@ -184,7 +184,7 @@ function Logout() {
           </div>
         </div>
       </div>
-      <ToastContainer />
+  
     </section>
   );
 }

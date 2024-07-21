@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useLayoutEffect } from "react";
-import { useRef } from "react";
+import React, { useEffect, useState, useLayoutEffect, useRef } from "react";
 import rough from "roughjs";
 
-const WhiteBoard = ({ user, canvasRef, ctxRef, elements, setElements, tool, color, socket,roomId }) => {
+const WhiteBoard = ({ user, canvasRef, ctxRef, elements, setElements, tool, color, socket, roomId }) => {
   const [img, setImg] = useState(null);
+  const canvasWrapperRef = useRef(null);
+
   useEffect(() => {
     socket.on("whiteBoardDataResponse", (data) => {
       setImg(data.imgURL);
@@ -29,15 +30,26 @@ const WhiteBoard = ({ user, canvasRef, ctxRef, elements, setElements, tool, colo
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     const scale = window.devicePixelRatio || 1;
-    canvas.height = (window.innerHeight *.65);
-    canvas.width = (window.innerWidth*.63);
-    canvas.style.width = `${window.innerWidth/2}px`;
-    canvas.style.height = `${window.innerHeight / 2}px`;
-    ctx.scale(scale, scale);
+
+    const resizeCanvas = () => {
+      if (canvasWrapperRef.current) {
+        const rect = canvasWrapperRef.current.getBoundingClientRect();
+        canvas.height = rect.height;
+        canvas.width = rect.width;
+        canvas.style.width = `${rect.width}px`;
+        canvas.style.height = `${rect.height}px`;
+        ctx.scale(scale, scale);
+      }
+    };
+
+    resizeCanvas();
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
     ctx.linecap = "round";
     ctxRef.current = ctx;
+
+    window.addEventListener("resize", resizeCanvas);
+    return () => window.removeEventListener("resize", resizeCanvas);
   }, []);
 
   useEffect(() => {
@@ -86,7 +98,7 @@ const WhiteBoard = ({ user, canvasRef, ctxRef, elements, setElements, tool, colo
         }
       });
       const canvasImage = canvasRef.current.toDataURL();
-      socket.emit("whiteboard", {canvasImage,roomId});
+      socket.emit("whiteboard", { canvasImage, roomId });
     }
   }, [elements]);
 
@@ -189,6 +201,8 @@ const WhiteBoard = ({ user, canvasRef, ctxRef, elements, setElements, tool, colo
   return (
     <>
       <div
+        id="canvas__wrapper"
+        ref={canvasWrapperRef}
         className="h-full w-full"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
