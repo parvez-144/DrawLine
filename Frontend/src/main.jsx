@@ -12,6 +12,7 @@ import Login from './components/Login/Login.jsx'
 import Signup from './components/Signup/Signup.jsx'
 import JoinRoomForm from './components/forms/JoinRoomForm/JoinRoomForm.jsx'
 import Layout from './Layout.jsx'
+import Lobby from './components/Lobby/Lobby.jsx'
 import CreateRoomForm from './components/forms/CreateRoomform/CreateRoomForm.jsx'
 const router=createBrowserRouter([
   {
@@ -40,14 +41,12 @@ const router=createBrowserRouter([
       },
       {
         path:"/rooms/:roomId",
-        element:<Room/>
+        element:<Lobby/>
       },
     ]
   }
 ])
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
     <RouterProvider router={router}/>
-  </React.StrictMode>,
 )

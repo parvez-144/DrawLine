@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import WhiteBoard from "../../components/whiteboard/WhiteBoard";
 import ChatBar from "../../components/ChatBar/ChatBar";
 import { useContext } from "react";
@@ -6,11 +6,20 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ToastContainer } from "react-toastify";
 import authContext from "../../components/Contexts/authContext";
 import Lobby from "../../components/Lobby/Lobby";
-import { AgoraRTCProvider,useRTCClient } from "agora-rtc-react";
-import AgoraRTC from "agora-rtc-sdk-ng";
+// import {
+//   AgoraRTCProvider,
+//   useRTCClient,
+//   useRemoteUsers,
+//   useLocalCameraTrack,
+//   useLocalMicrophoneTrack,
+//   useJoin,
+// } from "agora-rtc-react";
+// import AgoraRTC from "agora-rtc-sdk-ng";
 import { Navigate, useNavigate } from "react-router-dom";
 import {
-  faCamera, faMicrophone, faDesktop ,
+  faCamera,
+  faMicrophone,
+  faDesktop,
   faRightFromBracket,
   faUsers,
   faPalette,
@@ -27,19 +36,19 @@ import {
   faCut,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
-
+import socketContext from "../../components/Contexts/socketContext";
 import roomContext from "../../components/Contexts/roomContext";
 import { Cookies } from "react-cookie";
 
-
-
 function Room() {
-  const AppId="73924983afa744debf741e506b0e4c76"
-  const authData=useContext(authContext);
-  const navigate=useNavigate();
-  const {verified}=authData;
+  const AppId = "73924983afa744debf741e506b0e4c76";
+  const authData = useContext(authContext);
+  const navigate = useNavigate();
+  const { verified } = authData;
   const data = useContext(roomContext);
-  const {  socket, users,userName } = data;
+  const socketData=useContext(socketContext)
+  const {socket}=socketData
+  const { users, userName } = data;
   const [tool, setTool] = useState("pencil");
   const [color, setcolor] = useState("black");
   const [elements, setElements] = useState([]);
@@ -47,28 +56,31 @@ function Room() {
   const [openedUserTab, setOpenedUserTab] = useState(false);
   const [openedChatTab, setOpenedChatTab] = useState(true);
   const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('user');
+    const savedUser = localStorage.getItem("user");
     return savedUser ? JSON.parse(savedUser) : null;
   });
+  const [lobbyKey, setLobbyKey] = useState(user.userId);
+  console.log( socket);
+  const cookie = new Cookies();
+  const token = null;
 
-  const cookie=new Cookies();
-  const token=null;
+  // const client = useRTCClient(
+  //   AgoraRTC.createClient({ codec: "vp8", mode: "rtc" })
+  // );
 
-   const client=useRTCClient( AgoraRTC.createClient({codec:"vp8",mode:"rtc"}))
-
-  
-  if(!verified){
-         navigate("/Login")
+  if (!verified) {
+    navigate("/Login");
   }
-
+  const uid = user.userId;
   const canvasRef = useRef(null);
   const ctxRef = useRef(null);
-  useEffect(() => {
-    socket.emit("userJoined", user);
-    return () => {
-      socket.emit("userLeft", user);
-    };
-  }, []);
+
+  // useEffect(() => {
+  //   socket.emit("userJoined", user);
+  //   return () => {
+  //     socket.emit("userLeft", user);
+  //   };
+  // }, [user]);
 
   const handleClearCanvas = () => {
     const canvas = canvasRef.current;
@@ -95,10 +107,14 @@ function Room() {
     ]);
     setHistory((prevHistory) => prevHistory.slice(0, prevHistory.length - 1));
   };
+  const handleRoomLeave = () => {
+    localStorage.removeItem("user")
+    socket.emit("userLeft", user);
+    navigate("/");
+  };
 
   return (
     <>
-     
       <div className="h-screen w-full flex flex-col ">
         <div className="whiteBoard__head  bg-slate-50 flex flex-row justify-between p-4 px-16 border-b-2 border-b-slate-300 shadow-lg">
           <span className="text-2xl font-bold text-sky-950">DrawLine</span>
@@ -128,7 +144,7 @@ function Room() {
             </div>
           )}
         </div>
-        <div className="flex flex-row w-full h-full" >
+        <div className="flex flex-row w-full h-full">
           <div className="whiteBoard flex flex-row w-full h-full">
             <div className="canvas w-full h-full border-2 border-gray-300 rounded-lg shadow-md  ">
               {user && user.presenter && (
@@ -241,8 +257,13 @@ function Room() {
                   </div>
                 </>
               )}
+            
+                <Lobby
+                   user={user}
+                />
+              
 
-              <WhiteBoard
+              {/* <WhiteBoard
                 canvasRef={canvasRef}
                 ctxRef={ctxRef}
                 roomId={user.roomId}
@@ -252,14 +273,10 @@ function Room() {
                 color={color}
                 socket={socket}
                 setElements={setElements}
-              />
+              /> */}
             </div>
-           {/* <AgoraRTCProvider client={client}>
-            <Lobby channelName={user?.roomId} AppId={AppId} token={token}/>
-           </AgoraRTCProvider> */}
-
-          </div >
-          {openedUserTab && (
+          </div>
+          {/* {openedUserTab && (
             <div className=" Chat_Users w-1/4 h-full">
               <div className="h-full flex flex-col text-black bg-white p-2 ">
                 <div className="h-full p-2 rounded-lg border-slate-400 border-2 ">
@@ -271,16 +288,15 @@ function Room() {
                       onClick={() => setOpenedUserTab(false)}
                     />
                   </div>
-                  <div className=" h-full pt-5   " >
+                  <div className=" h-full pt-5   ">
                     <h2 className=" text-xs">IN MEETING</h2>
                     <div className="mt-3  overflow-auto h-full max-h-[65vh]">
-                    {users.map((usr, index) => (
-                <p key={index * 999} className="my-2 text-white">
-                  {usr.name}
-                  {user && user.userId === usr.userId && " (You)"}
-                </p>
-              ))}
-                      
+                      {users.map((usr, index) => (
+                        <p key={index * 999} className="my-2 text-white">
+                          {usr.name}
+                          {user && user.userId === usr.userId && " (You)"}
+                        </p>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -289,9 +305,14 @@ function Room() {
           )}
           {openedChatTab && (
             <div className="Chat_Users w-1/4 h-full  ">
-              <ChatBar setOpenedChatTab={setOpenedChatTab} socket={socket} userName={user.userName} roomId={user.roomId} />
+              <ChatBar
+                setOpenedChatTab={setOpenedChatTab}
+                socket={socket}
+                userName={user.userName}
+                roomId={user.roomId}
+              />
             </div>
-          )}
+          )} */}
         </div>
 
         <div className="bg-slate-50 ">
@@ -329,13 +350,14 @@ function Room() {
               icon={faDesktop}
             />
             <FontAwesomeIcon
+              onClick={handleRoomLeave}
               className=" text-2xl hover:scale-125 cursor-pointer"
               icon={faRightFromBracket}
             />
           </section>
         </div>
       </div>
-      <ToastContainer/>
+      <ToastContainer />
     </>
   );
 }

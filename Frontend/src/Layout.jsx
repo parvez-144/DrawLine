@@ -23,7 +23,7 @@ function Layout() {
   const [verified, setVerified] = useState(false);
   const [users, setUsers] = useState([]);
   const [isAuthReady, setIsAuthReady] = useState(false); // New state to track when authContext is ready
-
+  console.log(socket);
   useEffect(() => {
     setupSocketListeners(socket, setUsers, toast);
   }, []);
@@ -32,7 +32,7 @@ function Layout() {
     console.log("working");
     verifyCookie(setUserName, setVerified);
     setIsAuthReady(true); // Set the state to true after the effect completes
-  }, [cookies, removeCookie, location]);
+  }, [cookies, removeCookie,location]);
 
   return (
     <>
