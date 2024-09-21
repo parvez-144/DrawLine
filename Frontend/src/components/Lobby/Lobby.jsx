@@ -1,13 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, {useImperativeHandle, useState, useEffect, useRef } from "react";
 import VideoCard from "../VideoCard/VideoCard";
 import Peer from "simple-peer";
 import styled from "styled-components";
+import { forwardRef } from "react";
 import socketContext from "../Contexts/socketContext";
 import { useContext } from "react";
-// import BottomBar from '../BottomBar/BottomBar';
-// import Chat from '../Chat/Chat';
 
-const Lobby = () => {
+const Lobby =forwardRef( (props,ref) => {
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem("user");
     return savedUser ? JSON.parse(savedUser) : null;
@@ -204,34 +203,18 @@ const Lobby = () => {
     return peersRef.current.find((p) => p.peerID === id);
   }
 
-  function createUserVideo(peer, index, arr) {
-    console.log(peer);
-    return (
-      <VideoBox
-        className={`width-peer${peers.length > 8 ? "" : peers.length}`}
-        onClick={expandScreen}
-        key={index}
-      >
-        {writeUserName(peer.userName)}
-        <FaIcon className="fas fa-expand" />
-        <VideoCard key={index} peer={peer} number={arr.length} />
-      </VideoBox>
-    );
-  }
-
+  
   function writeUserName(userName, index) {
     if (userVideoAudio.hasOwnProperty(userName)) {
       if (!userVideoAudio[userName].video) {
-        return <UserName key={userName}>{userName}</UserName>;
+        return <p
+        className="h-full w-full rounded-full bg-gray-300 object-cover "
+         key={userName}>{userName}</p>;
       }
     }
   }
 
-  // Open Chat
-  const clickChat = (e) => {
-    e.stopPropagation();
-    setDisplayChat(!displayChat);
-  };
+ 
 
   // BackButton
   const goToBack = (e) => {
@@ -240,7 +223,12 @@ const Lobby = () => {
     sessionStorage.removeItem("user");
     window.location.href = "/";
   };
+  
+  useImperativeHandle(ref,()=>({
+        toggleCameraAudio,
+        clickScreenSharing,
 
+  }))
   const toggleCameraAudio = (e) => {
     const target = e.target.getAttribute("data-switch");
 
@@ -272,15 +260,14 @@ const Lobby = () => {
     });
 
     socket.emit("BE-toggle-camera-audio", { roomId, switchTarget: target });
-  };
-
+  }
   const clickScreenSharing = () => {
     if (!screenShare) {
       navigator.mediaDevices
         .getDisplayMedia({ cursor: true })
         .then((stream) => {
           const screenTrack = stream.getTracks()[0];
-
+          
           peersRef.current.forEach(({ peer }) => {
             // replaceTrack (oldTrack, newTrack, oldStream);
             peer.replaceTrack(
@@ -298,8 +285,8 @@ const Lobby = () => {
               peer.replaceTrack(
                 screenTrack,
                 peer.streams[0]
-                  .getTracks()
-                  .find((track) => track.kind === "video"),
+                .getTracks()
+                .find((track) => track.kind === "video"),
                 userStream.current
               );
             });
@@ -311,165 +298,96 @@ const Lobby = () => {
           screenTrackRef.current = screenTrack;
           setScreenShare(true);
         });
-    } else {
-      screenTrackRef.current.onended();
-    }
-  };
-
-  const expandScreen = (e) => {
-    const elem = e.target;
-
-    if (elem.requestFullscreen) {
-      elem.requestFullscreen();
-    } else if (elem.mozRequestFullScreen) {
-      /* Firefox */
-      elem.mozRequestFullScreen();
-    } else if (elem.webkitRequestFullscreen) {
-      /* Chrome, Safari & Opera */
-      elem.webkitRequestFullscreen();
-    } else if (elem.msRequestFullscreen) {
-      /* IE/Edge */
-      elem.msRequestFullscreen();
-    }
-  };
-
-  const clickBackground = () => {
-    if (!showVideoDevices) return;
-
-    setShowVideoDevices(false);
-  };
-
-  const clickCameraDevice = (event) => {
-    if (
-      event &&
-      event.target &&
-      event.target.dataset &&
-      event.target.dataset.value
-    ) {
-      const deviceId = event.target.dataset.value;
-      const enabledAudio =
-        userVideoRef.current.srcObject.getAudioTracks()[0].enabled;
-
-      navigator.mediaDevices
-        .getUserMedia({ video: { deviceId }, audio: enabledAudio })
-        .then((stream) => {
-          const newStreamTrack = stream
-            .getTracks()
-            .find((track) => track.kind === "video");
-          const oldStreamTrack = userStream.current
-            .getTracks()
-            .find((track) => track.kind === "video");
-
-          userStream.current.removeTrack(oldStreamTrack);
-          userStream.current.addTrack(newStreamTrack);
-
-          peersRef.current.forEach(({ peer }) => {
-            replaceTrack(oldTrack, newTrack, oldStream);
-            peer.replaceTrack(
-              oldStreamTrack,
-              newStreamTrack,
-              userStream.current
-            );
-          });
-        });
-    }
-  };
-
+      } else {
+        screenTrackRef.current.onended();
+      }
+    };
+    
+    const expandScreen = (e) => {
+      const elem = e.target;
+      
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+      } else if (elem.mozRequestFullScreen) {
+        /* Firefox */
+        elem.mozRequestFullScreen();
+      } else if (elem.webkitRequestFullscreen) {
+        /* Chrome, Safari & Opera */
+        elem.webkitRequestFullscreen();
+      } else if (elem.msRequestFullscreen) {
+        /* IE/Edge */
+        elem.msRequestFullscreen();
+      }
+    };
+    
+    const clickBackground = () => {
+      if (!showVideoDevices) return;
+      
+      setShowVideoDevices(false);
+    };
+  
+  function createUserVideo(peer, index, arr) {
+    console.log(peer);
+    return (
+      <div
+        className={`width-peer${peers.length > 8 ? "" : peers.length} h-36 w-36`}
+        onClick={expandScreen}
+        key={index}
+      >
+        {writeUserName(peer.userName)}
+        <FaIcon className="fas fa-expand" />
+        <VideoCard key={index} peer={peer} number={arr.length} />
+      </div>
+    );
+  }
   return (
-    <RoomContainer onClick={clickBackground}>
-      <VideoAndBarContainer>
-        <VideoContainer>
-          {/* Current User Video */}
-          <VideoBox
-            className={`width-peer${peers.length > 8 ? "" : peers.length}`}
-          >
-            {userVideoAudio["localUser"].video ? null : (
-              <UserName>{currentUser}</UserName>
-            )}
-            <FaIcon className="fas fa-expand" />
-            <MyVideo
-              onClick={expandScreen}
-              ref={userVideoRef}
-              muted
+    <div className="video__wrapper w-full" onClick={clickBackground}>
+      <div className="h-full gap-3 w-full flex flex-wrap justify-center content-center ">
+        {/* Current User Video */}
+        <div
+          className={`width-peer${
+            peers.length > 8 ? "" : peers.length
+          } h-36 w-36`}
+        >
+          {userVideoAudio["localUser"].video ? (
+            <video
+              className="h-full w-full rounded-full bg-gray-300 object-cover "
               autoPlay
+              muted
               playInline
-            ></MyVideo>
-          </VideoBox>
-          {/* Joined User Vidoe */}
+              ref={userVideoRef}
+            ></video>
+          ) : (
+            <p className="h-full w-full rounded-full object-cover ">
+              {userName}
+            </p>
+          )}
+        </div>
 
-          {peers &&
-            peers.map((peer, index, arr) => createUserVideo(peer, index, arr))}
-        </VideoContainer>
-        {/* <BottomBar
-          clickScreenSharing={clickScreenSharing}
-          clickChat={clickChat}
-          clickCameraDevice={clickCameraDevice}
-          goToBack={goToBack}
-          toggleCameraAudio={toggleCameraAudio}
-          userVideoAudio={userVideoAudio['localUser']}
-          screenShare={screenShare}
-          videoDevices={videoDevices}
-          showVideoDevices={showVideoDevices}
-          setShowVideoDevices={setShowVideoDevices}
-        /> */}
-      </VideoAndBarContainer>
-      {/* <Chat display={displayChat} roomId={roomId} /> */}
-    </RoomContainer>
+        {/* remote users tracks */}
+
+        {peers &&
+          peers.map((peer, index, arr) => createUserVideo(peer, index, arr))}
+      </div>
+    </div>
   );
-};
+});
 
-const RoomContainer = styled.div`
-  display: flex;
-  width: 100%;
-  max-height: 100vh;
-  flex-direction: row;
-`;
+{
+  /* <BottomBar
+  clickScreenSharing={clickScreenSharing}
+  clickChat={clickChat}
+  clickCameraDevice={clickCameraDevice}
+  goToBack={goToBack}
+  toggleCameraAudio={toggleCameraAudio}
+  userVideoAudio={userVideoAudio['localUser']}
+  screenShare={screenShare}
+  videoDevices={videoDevices}
+  showVideoDevices={showVideoDevices}
+  setShowVideoDevices={setShowVideoDevices}
+/> */
+}
 
-const VideoContainer = styled.div`
-  max-width: 100%;
-  height: 92%;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-around;
-  flex-wrap: wrap;
-  align-items: center;
-  padding: 15px;
-  box-sizing: border-box;
-  gap: 10px;
-`;
-
-const VideoAndBarContainer = styled.div`
-  position: relative;
-  width: 100%;
-  height: 100vh;
-`;
-
-const MyVideo = styled.video``;
-
-const VideoBox = styled.div`
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  > video {
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-  }
-
-  :hover {
-    > i {
-      display: block;
-    }
-  }
-`;
-
-const UserName = styled.div`
-  position: absolute;
-  font-size: calc(20px + 5vmin);
-  z-index: 1;
-`;
 
 const FaIcon = styled.i`
   display: none;

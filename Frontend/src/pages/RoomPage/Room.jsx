@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect} from "react";
 import WhiteBoard from "../../components/whiteboard/WhiteBoard";
 import ChatBar from "../../components/ChatBar/ChatBar";
 import { useContext } from "react";
@@ -6,15 +6,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ToastContainer } from "react-toastify";
 import authContext from "../../components/Contexts/authContext";
 import Lobby from "../../components/Lobby/Lobby";
-// import {
-//   AgoraRTCProvider,
-//   useRTCClient,
-//   useRemoteUsers,
-//   useLocalCameraTrack,
-//   useLocalMicrophoneTrack,
-//   useJoin,
-// } from "agora-rtc-react";
-// import AgoraRTC from "agora-rtc-sdk-ng";
 import { Navigate, useNavigate } from "react-router-dom";
 import {
   faCamera,
@@ -31,9 +22,6 @@ import {
   faTimes,
   faBars,
   faMessage,
-  faCircleInfo,
-  faCross,
-  faCut,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import socketContext from "../../components/Contexts/socketContext";
@@ -41,7 +29,6 @@ import roomContext from "../../components/Contexts/roomContext";
 import { Cookies } from "react-cookie";
 
 function Room() {
-  const AppId = "73924983afa744debf741e506b0e4c76";
   const authData = useContext(authContext);
   const navigate = useNavigate();
   const { verified } = authData;
@@ -55,19 +42,14 @@ function Room() {
   const [history, setHistory] = useState([]);
   const [openedUserTab, setOpenedUserTab] = useState(false);
   const [openedChatTab, setOpenedChatTab] = useState(true);
+  const buttonsRef=useRef();
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem("user");
     return savedUser ? JSON.parse(savedUser) : null;
   });
-  const [lobbyKey, setLobbyKey] = useState(user.userId);
+
   console.log( socket);
-  const cookie = new Cookies();
-  const token = null;
-
-  // const client = useRTCClient(
-  //   AgoraRTC.createClient({ codec: "vp8", mode: "rtc" })
-  // );
-
+  
   if (!verified) {
     navigate("/Login");
   }
@@ -75,12 +57,12 @@ function Room() {
   const canvasRef = useRef(null);
   const ctxRef = useRef(null);
 
-  // useEffect(() => {
-  //   socket.emit("userJoined", user);
-  //   return () => {
-  //     socket.emit("userLeft", user);
-  //   };
-  // }, [user]);
+  useEffect(() => {
+    socket.emit("userJoined", user);
+    return () => {
+      socket.emit("userLeft", user);
+    };
+  }, [user]);
 
   const handleClearCanvas = () => {
     const canvas = canvasRef.current;
@@ -112,10 +94,24 @@ function Room() {
     socket.emit("userLeft", user);
     navigate("/");
   };
-
+  const handleToggleCamera=(e)=>{
+    if(buttonsRef.current){
+      buttonsRef.current.toggleCameraAudio(e);
+    }
+  }
+  const handleMicrophone=(e)=>{
+    if(buttonsRef.current){
+      buttonsRef.current.toggleCameraAudio(e);
+    }
+  }
+  const handleScreenShare=(e)=>{
+    if(buttonsRef.current){
+      buttonsRef.current.clickScreenSharing(e);
+    }
+  }
   return (
     <>
-      <div className="h-screen w-full flex flex-col ">
+      <div className="h-screen w-full flex flex-col max-h-lvh">
         <div className="whiteBoard__head  bg-slate-50 flex flex-row justify-between p-4 px-16 border-b-2 border-b-slate-300 shadow-lg">
           <span className="text-2xl font-bold text-sky-950">DrawLine</span>
           {user && user.presenter && (
@@ -258,12 +254,10 @@ function Room() {
                 </>
               )}
             
-                <Lobby
-                   user={user}
-                />
+               
               
 
-              {/* <WhiteBoard
+             <WhiteBoard
                 canvasRef={canvasRef}
                 ctxRef={ctxRef}
                 roomId={user.roomId}
@@ -273,11 +267,15 @@ function Room() {
                 color={color}
                 socket={socket}
                 setElements={setElements}
-              /> */}
+              /> 
             </div>
           </div>
-          {/* {openedUserTab && (
-            <div className=" Chat_Users w-1/4 h-full">
+          <div className=" w-1/2 flex flex-col justify-between ">
+            <div className="p-2 rounded-md m-2 h-[60%] border-2 border-gray-300">
+              <Lobby ref={buttonsRef}/>
+            </div>
+           {openedUserTab && (
+            <div className=" Chat_Users h-full">
               <div className="h-full flex flex-col text-black bg-white p-2 ">
                 <div className="h-full p-2 rounded-lg border-slate-400 border-2 ">
                   <div className="flex flex-row justify-between">
@@ -304,7 +302,7 @@ function Room() {
             </div>
           )}
           {openedChatTab && (
-            <div className="Chat_Users w-1/4 h-full  ">
+            <div className="Chat_Users  h-full  ">
               <ChatBar
                 setOpenedChatTab={setOpenedChatTab}
                 socket={socket}
@@ -312,7 +310,8 @@ function Room() {
                 roomId={user.roomId}
               />
             </div>
-          )} */}
+          )} 
+        </div>
         </div>
 
         <div className="bg-slate-50 ">
@@ -335,18 +334,19 @@ function Room() {
             />
             <FontAwesomeIcon
               className=" text-2xl hover:scale-125 cursor-pointer"
-              icon={faCircleInfo}
-            />
-            <FontAwesomeIcon
-              className=" text-2xl hover:scale-125 cursor-pointer"
+               onClick={handleToggleCamera}
+               data-switch='video'
               icon={faCamera}
             />
             <FontAwesomeIcon
               className=" text-2xl hover:scale-125 cursor-pointer"
+              onClick={handleMicrophone}
+              data-switch="audio"
               icon={faMicrophone}
             />
             <FontAwesomeIcon
-              className=" text-2xl hover:scale-125 cursor-pointer"
+             onClick={handleScreenShare}
+           className=" text-2xl hover:scale-125 cursor-pointer"
               icon={faDesktop}
             />
             <FontAwesomeIcon

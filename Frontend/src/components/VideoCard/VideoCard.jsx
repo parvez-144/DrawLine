@@ -14,6 +14,7 @@ const VideoCard = (props) => {
 
   return (
     <Video
+    className='h-full w-full bg-black object-cover rounded-full'
       playsInline
       autoPlay
       ref={ref}
