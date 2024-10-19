@@ -4,4 +4,8 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(),nodePolyfills()],
+  server: {
+    host: '0.0.0.0', // Make sure to listen on all interfaces
+    port: 5173, // Your desired port
+  },
 })
